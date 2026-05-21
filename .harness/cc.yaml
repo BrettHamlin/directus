@@ -1,0 +1,79 @@
+version: "1"
+
+# gridfire_template_version: stage3-ts-monorepo/v1
+
+github:
+  owner: BrettHamlin
+  repo: directus
+
+reviewer_dispatch:
+  strategy: progressive
+  clustering:
+    mode: lsp_preferred
+    regex_fallback: true
+
+reviewers:
+  - name: workspace-boundary-contracts
+    file: .harness/agents/workspace-boundary-contracts.md
+    description: Checks TypeScript monorepo workspace ownership, package dependencies, exports, deep imports, and scoped build/test impact.
+    path_hints: ["package.json", "pnpm-workspace.yaml", "pnpm-lock.yaml", "packages/**", "api/**", "app/**", "sdk/**", "**/*.ts", "**/*.tsx"]
+    language_hints: [typescript, tsx, javascript, json, yaml]
+    mandatory_triggers: ["workspace", "package", "dependency", "export", "import", "filter", "build", "sdk", "api"]
+    passing_grade: C
+    max_retries: 5
+
+  - name: cross-package-contracts
+    file: .harness/agents/cross-package-contracts.md
+    description: Checks API/shared-type/SDK/app contract drift across TypeScript workspace packages.
+    path_hints: ["api/**", "app/**", "sdk/**", "packages/types/**", "packages/schema/**", "packages/utils/**", "**/*.ts", "**/*.tsx"]
+    language_hints: [typescript, tsx, javascript, json]
+    mandatory_triggers: ["api", "sdk", "schema", "type", "contract", "shared", "client", "server", "request", "response"]
+    passing_grade: C
+    max_retries: 5
+
+codegen:
+  cli_provider: codex-cli
+  default_model: gpt-5.5
+
+stages:
+  planner:
+    explore_model: gpt-5.5
+  code_gen_feature:
+    model: gpt-5.5
+    timeout_s: 21600
+  code_gen_test:
+    model: gpt-5.5
+  code_gen_e2e_test:
+    model: gpt-5.5
+    timeout_s: 21600
+
+ci:
+  provider: github-actions
+  build:
+    workflow: ".github/workflows/gridfire-build.yml"
+    timeout_sec: 3600
+  test:
+    workflow: ".github/workflows/gridfire-test.yml"
+    timeout_sec: 3600
+  failure_extraction:
+    - source: annotations
+    - source: junit-xml
+      path: "test-results/*.xml"
+    - source: ai-extract
+
+gates:
+  plan:
+    auto_approve: true
+  ac:
+    auto_approve: true
+  merge_review:
+    auto_approve: true
+
+inner_loop:
+  reviewer_per_max: 2
+  reviewer_total_max: 5
+  build_max: 3
+  test_max: 3
+  build_test_total_max: 5
+  budget_reset_on_user_changes: true
+
