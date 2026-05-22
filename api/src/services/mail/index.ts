@@ -19,9 +19,12 @@ const env = useEnv();
 const logger = useLogger();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const emailTemplatesPath = env['EMAIL_TEMPLATES_PATH'] as string | undefined;
 
 const liquidEngine = new Liquid({
-	root: [path.resolve(env['EMAIL_TEMPLATES_PATH'] as string), path.resolve(__dirname, 'templates')],
+	root: [emailTemplatesPath ? path.resolve(emailTemplatesPath) : undefined, path.resolve(__dirname, 'templates')].filter(
+		(root): root is string => root !== undefined,
+	),
 	extname: '.liquid',
 });
 
@@ -110,10 +113,11 @@ export class MailService {
 	}
 
 	private async renderTemplate(template: string, variables: Record<string, any>) {
-		const customTemplatePath = path.resolve(env['EMAIL_TEMPLATES_PATH'] as string, template + '.liquid');
+		const customTemplatePath = emailTemplatesPath ? path.resolve(emailTemplatesPath, template + '.liquid') : null;
 		const systemTemplatePath = path.join(__dirname, 'templates', template + '.liquid');
 
-		const templatePath = (await fse.pathExists(customTemplatePath)) ? customTemplatePath : systemTemplatePath;
+		const templatePath =
+			customTemplatePath && (await fse.pathExists(customTemplatePath)) ? customTemplatePath : systemTemplatePath;
 
 		if ((await fse.pathExists(templatePath)) === false) {
 			throw new InvalidPayloadError({ reason: `Template "${template}" doesn't exist` });

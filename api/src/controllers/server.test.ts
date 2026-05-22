@@ -151,6 +151,7 @@ async function requestHealth({
 
 function expectIsoTimestamp(value: unknown) {
 	expect(typeof value).toBe('string');
+	expect(Number.isNaN(new Date(value as string).getTime())).toBe(false);
 	expect(new Date(value as string).toISOString()).toBe(value);
 }
 
