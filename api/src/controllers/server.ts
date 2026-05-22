@@ -82,6 +82,7 @@ router.get(
 		const data = await service.health();
 
 		res.setHeader('Content-Type', 'application/health+json');
+		res.setHeader('X-Directus-Health-Status', data['status']);
 
 		if (data['status'] === 'error') res.status(503);
 		res.locals['payload'] = data;
