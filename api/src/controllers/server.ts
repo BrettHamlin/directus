@@ -79,7 +79,9 @@ router.get(
 			schema: req.schema,
 		});
 
-		const data = await service.health();
+		const include = req.query['include'];
+		const includeTimestamp = Array.isArray(include) ? include.includes('timestamp') : include === 'timestamp';
+		const data = await service.health({ includeTimestamp });
 
 		res.setHeader('Content-Type', 'application/health+json');
 

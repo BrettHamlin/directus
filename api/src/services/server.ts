@@ -157,7 +157,7 @@ export class ServerService {
 		return info;
 	}
 
-	async health(): Promise<Record<string, any>> {
+	async health(options?: { includeTimestamp?: boolean }): Promise<Record<string, any>> {
 		const { nanoid } = await import('nanoid');
 
 		const checkID = nanoid(5);
@@ -170,6 +170,7 @@ export class ServerService {
 			checks: {
 				[service: string]: HealthCheck[];
 			};
+			checkedAt?: string;
 		};
 
 		type HealthCheck = {
@@ -223,7 +224,15 @@ export class ServerService {
 			if (data.status === 'error') break;
 		}
 
+		if (options?.includeTimestamp === true) {
+			data.checkedAt = new Date().toISOString();
+		}
+
 		if (this.accountability?.admin !== true) {
+			if (options?.includeTimestamp === true) {
+				return { status: data.status, checkedAt: data.checkedAt };
+			}
+
 			return { status: data.status };
 		} else {
 			return data;
