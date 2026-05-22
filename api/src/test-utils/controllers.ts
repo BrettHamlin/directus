@@ -103,6 +103,7 @@ export function createMockResponse(overrides: Partial<Response> = {}): Response 
 		json: vi.fn().mockReturnThis(),
 		send: vi.fn().mockReturnThis(),
 		set: vi.fn().mockReturnThis(),
+		setHeader: vi.fn().mockReturnThis(),
 		end: vi.fn().mockReturnThis(),
 		...overrides,
 	} as unknown as Response;
