@@ -36,6 +36,7 @@ describe('/server', () => {
 
 		TEST_USERS.forEach((userKey) => {
 			describe(USER[userKey].NAME, () => {
+				//harness:criterion=c-health-header-present-admin,c-health-header-value-matches-status-admin,c-health-body-admin-unchanged,c-health-content-type-preserved,c-health-graphql-resolver-unaffected
 				it.each(vendors)('%s', async (vendor) => {
 					// Action
 					const response = await request(getUrl(vendor))
@@ -51,6 +52,7 @@ describe('/server', () => {
 					// Assert
 					expect(response.statusCode).toBe(200);
 					expect(gqlResponse.statusCode).toBe(200);
+					expect(response.headers['content-type']).toContain('application/health+json');
 
 					if (userKey === USER.ADMIN.KEY) {
 						const adminResult = {
@@ -61,6 +63,7 @@ describe('/server', () => {
 						};
 
 						expect(response.body).toEqual(adminResult);
+						expect(response.headers['x-directus-health-status']).toEqual(expect.stringMatching(/^(ok|warn|error)$/));
 						expect(gqlResponse.body.data.server_health).toEqual(adminResult);
 					} else {
 						const nonAdminResult = { status: expect.stringMatching(/ok|warn/) };
@@ -69,6 +72,20 @@ describe('/server', () => {
 						expect(gqlResponse.body.data.server_health).toEqual(nonAdminResult);
 					}
 				});
+			});
+		});
+
+		describe('public', () => {
+			//harness:criterion=c-health-header-present-noauth,c-health-header-value-matches-status-noauth,c-health-body-noauth-redacted
+			it.each(vendors)('%s', async (vendor) => {
+				// Action
+				const response = await request(getUrl(vendor)).get('/server/health');
+
+				// Assert
+				expect(response.statusCode).toBe(200);
+				expect(response.headers['x-directus-health-status']).toEqual(expect.stringMatching(/^(ok|warn|error)$/));
+				expect(Object.keys(response.body)).toHaveLength(1);
+				expect(response.body).toEqual({ status: expect.stringMatching(/^(ok|warn)$/) });
 			});
 		});
 	});
